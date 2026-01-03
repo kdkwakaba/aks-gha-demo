@@ -10,7 +10,7 @@ env:
   AZURE_CREDENTIALS: '{"clientId":"${{ secrets.AZURE_CLIENT_ID }}","clientSecret":"${{ secrets.AZURE_CLIENT_SECRET }}","subscriptionId":"${{ secrets.AZURE_SUBSCRIPTION_ID }}","tenantId":"${{ secrets.AZURE_TENANT_ID }}"}'
 
 jobs:
-  build:
+  image-build:
     name: Build and Push Docker Image to ACR
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -18,11 +18,14 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v6
       
+      # サービスプリンシパルを使いAzure にログインする
+      # azure/acr-buildでAzure CLIを使うためログインしていないとエラーになる
       - name: Azure Login
         uses: azure/login@v2
         with:
           creds: ${{ env.AZURE_CREDENTIALS }}
 
+      # コンテナイメージをビルドしACR に格納する
       - name: Build and Push Docker Image to ACR
         uses: azure/acr-build@v1
         with:
@@ -41,8 +44,65 @@ jobs:
   deploy:
     name: Deploy to AKS
     runs-on: ubuntu-latest
-    needs: build
+    needs: image-build
+    env:
+      RESOURCE_GROUP_NAME: 'rg-aksghatest'
+      AKS_CLUSTER_NAME: 'aks-aksghatest'
     timeout-minutes: 10
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v6
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      # サービスプリンシパルを使いAzure にログインする
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          creds: ${{ env.AZURE_CREDENTIALS }}
+
+      # AKSの資格情報を取得する
+      - name: Set AKS context
+        uses: azure/aks-set-context@v4
+        with:
+          resource-group: ${{ env.RESOURCE_GROUP_NAME }}
+          cluster-name: ${{ env.AKS_CLUSTER_NAME }}
+
+      # Kubernetesマニフェストのタグを書き換える
+      - name: Update image tag in Kubernetes manifest
+        uses: Azure/k8s-artifact-substitute@v2
+        with:
+          manifests: |
+            manifests/aks-demo.yaml
+          images: |
+            acraksghatest.azurecr.io/repos/aks-demo:${{ inputs.image_tag }}
+
+      # チェックのためマニフェストを表示する
+      - name: Show updated Kubernetes manifest
+        run: cat manifests/aks-demo.yaml
+
+      # 書き換え後のKubernetesマニフェストをチェックする
+      # azure/k8s-lintはkubeconformとdry-runを同時実行できないため分割する
+      - name: Dry-run updated Kubernetes manifest
+        uses: azure/k8s-lint@v3
+        with:
+          lintType: kubeconform
+          manifests: |
+            manifests/aks-demo.yaml
+          kubeconformOpts: -summary
+
+      - name: Dry-run updated Kubernetes manifest
+        uses: azure/k8s-lint@v3
+        with:
+          lintType: dryrun
+          manifests: |
+            manifests/aks-demo.yaml
+
+      # AKSにデプロイする
+      - name: Deploy to AKS
+        uses: azure/k8s-deploy@v5
+        with:
+          resource-group: ${{ env.RESOURCE_GROUP_NAME }}
+          name: ${{ env.AKS_CLUSTER_NAME }}
+          action: deploy
+          strategy: basic
+          manifests: |
+            manifests/aks-demo.yaml
