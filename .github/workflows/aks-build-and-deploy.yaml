@@ -26,20 +26,20 @@ jobs:
           creds: ${{ env.AZURE_CREDENTIALS }}
 
       # コンテナイメージをビルドしACR に格納する
-      - name: Build and Push Docker Image to ACR
-        uses: azure/acr-build@v1
-        with:
-          service_principal: ${{ secrets.AZURE_CLIENT_ID }}
-          service_principal_password: ${{ secrets.AZURE_CLIENT_SECRET }}
-          tenant: ${{ secrets.AZURE_TENANT_ID }}
-          registry: "acraksghatest"
-          repository: "repos"
-          image: "aks-demo"
-          tag: ${{ github.event.inputs.image_tag }}
-          dockerfile: ./Dockerfile
-          git_access_token: ${{ secrets.GIT_ACCESS_TOKEN }}
-          folder: ./
-          branch: main
+      #- name: Build and Push Docker Image to ACR
+      #  uses: azure/acr-build@v1
+      #  with:
+      #    service_principal: ${{ secrets.AZURE_CLIENT_ID }}
+      #    service_principal_password: ${{ secrets.AZURE_CLIENT_SECRET }}
+      #    tenant: ${{ secrets.AZURE_TENANT_ID }}
+      #    registry: "acraksghatest"
+      #    repository: "repos"
+      #    image: "aks-demo"
+      #    tag: ${{ github.event.inputs.image_tag }}
+      #    dockerfile: ./Dockerfile
+      #    git_access_token: ${{ secrets.GIT_ACCESS_TOKEN }}
+      #    folder: ./
+      #    branch: main
           
   deploy:
     name: Deploy to AKS
