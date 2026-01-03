@@ -29,7 +29,7 @@ spec:
       - name: acraksghatest-pull-secret
       containers:
       - name: aks-demo
-        image: acraksghatest.azurecr.io/aks-demo:latest
+        image: acraksghatest.azurecr.io/repos/aks-demo:latest
         ports:
         - containerPort: 80
 

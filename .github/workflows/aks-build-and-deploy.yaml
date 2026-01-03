@@ -31,11 +31,12 @@ jobs:
           tenant: ${{ secrets.AZURE_TENANT_ID }}
           registry: "acraksghatest"
           repository: "repos"
-          image: "image"
+          image: "aks-demo"
           tag: ${{ inputs.image_tag }}
           dockerfile: ./Dockerfile
           git_access_token: ${{ secrets.GIT_ACCESS_TOKEN }}
           folder: ./
+          branch: main
           
   deploy:
     name: Deploy to AKS
