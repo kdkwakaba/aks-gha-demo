@@ -20,6 +20,7 @@ spec:
       containers:
       - name: aks-demo
         image: acraksghatest.azurecr.io/repos/aks-demo:latest
+        imagePullPolicy: Always
         ports:
         - containerPort: 80
 
