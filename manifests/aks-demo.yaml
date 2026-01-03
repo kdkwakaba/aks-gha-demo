@@ -1,0 +1,48 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: acraksghatest-pull-secret
+  namespace: default
+type: kubernetes.io/dockerconfigjson
+data:
+  # Replace with your base64-encoded .dockerconfigjson
+  .dockerconfigjson: REPLACE_WITH_BASE64_DOCKERCONFIGJSON
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: aks-demo
+  labels:
+    app: aks-demo
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: aks-demo
+  template:
+    metadata:
+      labels:
+        app: aks-demo
+    spec:
+      imagePullSecrets:
+      - name: acraksghatest-pull-secret
+      containers:
+      - name: aks-demo
+        image: acraksghatest.azurecr.io/aks-demo:latest
+        ports:
+        - containerPort: 80
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: aks-demo-svc
+spec:
+  type: LoadBalancer
+  selector:
+    app: aks-demo
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 80
