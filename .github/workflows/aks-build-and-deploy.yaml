@@ -2,6 +2,10 @@ name: Build and Deploy to AKS
 
 on:
   workflow_dispatch:
+    inputs:
+      image_tag:
+        description: 'Image tag'
+        required: true
 
 jobs:
   build:
@@ -9,9 +13,30 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v6
+      - name: Checkout repository
+        uses: actions/checkout@v6
+      
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
+      - name: Build and Push Docker Image to ACR
+        uses: azure/acr-build@v1
+        with:
+          service_principal: ${{ secrets.AZURE_CLIENT_ID }}
+          service_principal_password: ${{ secrets.AZURE_CLIENT_SECRET }}
+          tenant: ${{ secrets.AZURE_TENANT_ID }}
+          registry: "acraksghatest"
+          repository: "repos"
+          image: "image"
+          tag: ${{ inputs.image_tag }}
+          dockerfile: ./Dockerfile
+          git_access_token: ${{ secrets.GIT_ACCESS_TOKEN }}
+          folder: ./
+          
   deploy:
     name: Deploy to AKS
     runs-on: ubuntu-latest
