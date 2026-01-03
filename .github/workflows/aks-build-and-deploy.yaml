@@ -76,10 +76,6 @@ jobs:
           images: |
             acraksghatest.azurecr.io/repos/aks-demo:${{ github.event.inputs.image_tag }}
 
-      # チェックのためマニフェストを表示する
-      - name: Show updated Kubernetes manifest
-        run: cat ${{ steps.update-manifest.outputs.manifests }}
-
       # 書き換え後のKubernetesマニフェストをチェックする
       # azure/k8s-lintはkubeconformとdry-runを同時実行できないため分割する
       - name: Check updated Kubernetes manifest with kubeconform
@@ -87,7 +83,7 @@ jobs:
         with:
           lintType: kubeconform
           manifests: |
-            manifests/aks-demo.yaml
+            ${{ steps.update-manifest.outputs.manifests }}
           kubeconformOpts: -summary
 
       - name: Dry-run updated Kubernetes manifest
@@ -95,7 +91,7 @@ jobs:
         with:
           lintType: dryrun
           manifests: |
-            manifests/aks-demo.yaml
+            ${{ steps.update-manifest.outputs.manifests }}
 
       # AKSにデプロイする
       - name: Deploy to AKS
@@ -106,4 +102,4 @@ jobs:
           action: deploy
           strategy: basic
           manifests: |
-            manifests/aks-demo.yaml
+            ${{ steps.update-manifest.outputs.manifests }}
